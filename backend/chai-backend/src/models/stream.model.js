@@ -13,7 +13,7 @@ const streamSchema = new Schema(
     },
     host: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Users",
       required: true,
     },
     isLive: {
@@ -22,7 +22,7 @@ const streamSchema = new Schema(
     },
     viewers: [{
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Users",
     }],
     viewerCount: {
       type: Number,
