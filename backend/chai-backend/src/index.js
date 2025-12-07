@@ -9,11 +9,23 @@ import mongoose from "mongoose";
 import { DB_NAME } from "./constants.js";
 import connectDB from "./db/index.js";
 import app from "./app.js";
+import { createServer } from "http";
+import { initializeSocket } from "./socket.js";
+
 console.log("🔧 Starting database connection...");
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+initializeSocket(httpServer);
+console.log("✅ Socket.io initialized");
+
 connectDB()
 .then(()=>{
-    app.listen(process.env.PORT || 8000, () => {
+    httpServer.listen(process.env.PORT || 8000, () => {
         console.log(`🚀 Server running on port ${process.env.PORT || 8000}`);
+        console.log(`🔌 Socket.io ready for connections`);
       });
 })
 .catch((err) => {

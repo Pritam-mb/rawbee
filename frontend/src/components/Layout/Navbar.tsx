@@ -71,6 +71,14 @@ export default function Navbar() {
                   <FiVideo className="w-4 h-4" />
                   <span className="font-medium">Upload</span>
                 </Link>
+                  <Link
+                  to="/start-livestream"
+                  className="hidden sm:flex items-center space-x-2 bg-red-600/10 hover:bg-red-600/20 text-red-500 px-4 py-2 rounded-lg transition-smooth border border-red-500/20"
+                >
+                  <FiVideo className="w-4 h-4" />
+                  <span className="font-medium">stream</span>
+                </Link>
+                
 
                 {/* Notifications */}
                 <button className="relative p-2.5 hover:bg-gray-800/50 rounded-lg transition-smooth">

@@ -40,6 +40,7 @@ import playlistRouter from "./routes/playlist.route.js"
 import subscriptionRouter from "./routes/subscription.route.js"
 import dashboardRouter from "./routes/dashboard.route.js"
 import healthcheckRouter from "./routes/healthcheck.route.js"
+import streamRouter from "./routes/stream.routes.js"
 
 //routes
 app.use("/users", cache('2 minutes'), userouter)
@@ -50,5 +51,20 @@ app.use("/playlists", playlistRouter)
 app.use("/subscriptions", subscriptionRouter)
 app.use("/dashboard", dashboardRouter)
 app.use("/healthcheck", healthcheckRouter)
+app.use("/streams", streamRouter)
+
+// Error handling middleware (must be last)
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    
+    res.status(statusCode).json({
+        success: false,
+        statusCode,
+        message,
+        errors: err.errors || [],
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
 
 export default app;

@@ -1,42 +1,167 @@
-import React, { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiMonitor, FiMessageCircle, FiShare2, FiUsers, FiSend } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { socketService } from '@/services/socketService'
+import { streamService } from '@/services/streamService'
+import { useAuthStore } from '@/store/authStore'
 
 function Livestream() {
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [isMuted, setIsMuted] = useState(false)
   const [isVideoOn, setIsVideoOn] = useState(true)
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [isChatEnabled, setIsChatEnabled] = useState(true)
-  const [viewerCount] = useState(142)
+  const [viewerCount, setViewerCount] = useState(0)
+  const [streamTitle, setStreamTitle] = useState('')
+  const [streamId, setStreamId] = useState('')
+  const videoRef = useRef<HTMLVideoElement>(null)
 
-  // People in stream with their mute status
-  const [participants, setParticipants] = useState([
-    { id: 1, name: 'Pritam', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=pritam', isMutedByHost: false },
-    { id: 2, name: 'Sahil', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sahil', isMutedByHost: false },
-    { id: 3, name: 'Rahul', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=rahul', isMutedByHost: false },
-    { id: 4, name: 'Arjun', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=arjun', isMutedByHost: true },
-  ])
+  // People in stream
+  const [participants, setParticipants] = useState<Array<{id: string, name: string, avatar: string, isMutedByHost: boolean}>>([])
 
   // Live comments
   const [comments, setComments] = useState<Array<{id: number, username: string, message: string, timestamp: string, avatar: string}>>([])
   const [newComment, setNewComment] = useState('')
 
-  const toggleParticipantMute = (id: number) => {
-    setParticipants(participants.map(p => 
-      p.id === id ? { ...p, isMutedByHost: !p.isMutedByHost } : p
-    ))
+  useEffect(() => {
+    // Get stream info from sessionStorage
+    const title = sessionStorage.getItem('livestream_title') || 'Untitled Stream'
+    const id = sessionStorage.getItem('livestream_id') || ''
+    const isActive = sessionStorage.getItem('livestream_active')
+    
+    setStreamTitle(title)
+    setStreamId(id)
+    
+    if (!id) {
+      toast.error('Stream not found')
+      navigate('/')
+      return
+    }
+    
+    // Connect to socket
+    socketService.connect()
+    
+    // Join stream room
+    if (user) {
+      socketService.joinStream(id, user._id, user.username)
+    }
+    
+    // Setup socket listeners
+    socketService.onViewerJoined((data) => {
+      toast.success(`${data.username} joined the stream`)
+      setViewerCount(data.viewerCount)
+    })
+    
+    socketService.onViewerLeft((data) => {
+      setViewerCount(data.viewerCount)
+    })
+    
+    socketService.onViewerCount((data) => {
+      setViewerCount(data.viewerCount)
+    })
+    
+    socketService.onNewMessage((message) => {
+      setComments(prev => [...prev, message])
+    })
+    
+    socketService.onChatToggled((data) => {
+      setIsChatEnabled(data.enabled)
+      toast(`Chat ${data.enabled ? 'enabled' : 'disabled'}`)
+    })
+    
+    socketService.onStreamEnded(() => {
+      toast('Stream has ended')
+      navigate('/')
+    })
+    
+    // Auto-start screen sharing if coming from start stream page
+    if (isActive === 'true') {
+      startScreenShare()
+      sessionStorage.removeItem('livestream_active')
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      if (user && id) {
+        socketService.leaveStream(id, user._id, user.username)
+      }
+      socketService.disconnect()
+    }
+  }, [])
+
+  const startScreenShare = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: 'always' },
+        audio: true
+      })
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+        videoRef.current.play()
+      }
+      
+      setIsScreenSharing(true)
+      
+      mediaStream.getVideoTracks()[0].onended = () => {
+        setIsScreenSharing(false)
+        if (videoRef.current) {
+          videoRef.current.srcObject = null
+        }
+        toast('Screen sharing stopped')
+      }
+    } catch (error) {
+      console.error('Screen share error:', error)
+      toast.error('Failed to start screen sharing')
+    }
+  }
+
+  const toggleParticipantMute = (id: string) => {
+    const participant = participants.find(p => p.id === id)
+    if (participant) {
+      const newMuteStatus = !participant.isMutedByHost
+      setParticipants(participants.map(p => 
+        p.id === id ? { ...p, isMutedByHost: newMuteStatus } : p
+      ))
+      socketService.muteParticipant(streamId, id, newMuteStatus)
+    }
   }
 
   const handleSendComment = () => {
-    if (newComment.trim()) {
-      setComments([...comments, {
-        id: comments.length + 1,
-        username: 'Host',
-        message: newComment,
-        timestamp: 'Just now',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=host'
-      }])
+    if (newComment.trim() && user) {
+      socketService.sendMessage(
+        streamId,
+        newComment,
+        user._id,
+        user.username,
+        user.avatar || ''
+      )
       setNewComment('')
+    }
+  }
+
+  const handleToggleChat = async () => {
+    try {
+      await streamService.toggleChat(streamId)
+      socketService.toggleChat(streamId, !isChatEnabled)
+    } catch (error) {
+      toast.error('Failed to toggle chat')
+    }
+  }
+
+  const handleEndStream = async () => {
+    try {
+      await streamService.endStream(streamId)
+      socketService.endStream(streamId)
+      sessionStorage.removeItem('livestream_id')
+      sessionStorage.removeItem('livestream_title')
+      sessionStorage.removeItem('livestream_description')
+      toast.success('Stream ended successfully')
+      navigate('/my-channel')
+    } catch (error) {
+      toast.error('Failed to end stream')
     }
   }
 
@@ -50,14 +175,27 @@ function Livestream() {
         
       <div className='flex-[7] bg-black border-r-2 border-gray-800 flex flex-col'>
         <div className='flex flex-row justify-between p-4 bg-gray-950'>
-            <button className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'>End Stream</button>
+            <button onClick={handleEndStream} className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'>End Stream</button>
             <button className='px-4 py-2 bg-red-500 text-white rounded-full flex items-center gap-2 animate-pulse'>
               <span className='w-2 h-2 bg-white rounded-full'></span>
               LIVE
             </button>
         </div>
-        <div className="video h-[50vh] bg-grey-950 border-2 border-red-800 flex items-center justify-center">
-          {/* Video player will go here */}
+        <div className="video h-[50vh] bg-black border-2 border-red-800 flex items-center justify-center relative">
+          <video 
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-contain"
+            style={{ display: isScreenSharing ? 'block' : 'none' }}
+          />
+          {!isScreenSharing && (
+            <div className="text-center">
+              <FiMonitor className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+              <p className="text-gray-400">No screen being shared</p>
+            </div>
+          )}
         </div>
         
         {/* Stream Controls */}
@@ -101,7 +239,7 @@ function Livestream() {
             </button>
 
             <button 
-              onClick={() => setIsChatEnabled(!isChatEnabled)}
+              onClick={handleToggleChat}
               className={`p-4 rounded-full transition-colors ${
                 isChatEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
               }`}
@@ -121,7 +259,7 @@ function Livestream() {
         </div>
         
         <div className="details border-t-2 border-gray-800 p-4 text-white bg-black flex-1 overflow-y-auto">
-          <h1> freefire live stream</h1>
+          <h1 className="text-xl font-semibold">{streamTitle}</h1>
 
         </div>
       </div>
