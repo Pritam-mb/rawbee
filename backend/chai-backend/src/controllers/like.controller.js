@@ -1,5 +1,6 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import {Like} from "../models/like.model.js"
+// import {apierror} from "../utils/apierror.js"
 import apierror from "../utils/apierror.js"
 import {apiresponse} from "../utils/apiresponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -8,12 +9,12 @@ import { Video } from "../models/video.model.js"
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params
     if(isValidObjectId(videoId) === false){
-        throw new ApiError("Invalid video ID", 400)
+        throw new apierror("Invalid video ID", 400)
     }
 
     const video = await Video.findById(videoId)
     if(!video){
-        throw new ApiError("Video not found", 404)
+        throw new apierror("Video not found", 404)
     }
     const existlike = await Like.findOne({
         user: req.user._id,
@@ -23,13 +24,13 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
     if(existlike){
         await Like.findByIdAndDelete(existlike._id)
-        return res.status(200).json(new ApiResponse("Video unliked successfully",200,null))
+        return res.status(200).json(new apiresponse("Video unliked successfully",200,null))
     }
     await Like.create({
         video: videoId,
         likedby: req.user._id
     })
-    return res.status(200).json(new ApiResponse("Video liked successfully",200,null))   
+    return res.status(200).json(new apiresponse("Video liked successfully",200,null))   
 
     })
     //TODO: toggle like on video
@@ -51,13 +52,13 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     })
     if(commentlike){
         await Like.findByIdAndDelete(commentlike._id)
-        return res.status(200).json(new ApiResponse("Comment unliked successfully",200,null))
+        return res.status(200).json(new apiresponse("Comment unliked successfully",200,null))
     }
     await Like.create({
         comment: commentId,
         likedby: req.user._id
     })
-    return res.status(200).json(new ApiResponse("Comment liked successfully",200,null))
+    return res.status(200).json(new apiresponse("Comment liked successfully",200,null))
     //TODO: toggle like on comment
 
 })

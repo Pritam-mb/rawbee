@@ -442,4 +442,23 @@ const watchistory = asyncHandler(async(req,res)=>{
     )
 }
 )
-export { register, loginuser,logoutuser,refreshAcessToken,changepassword ,getcurrentuser,updateuser, avatarupdate,coverimgupdate,getuserchannelprofile, watchistory}
+
+const getUserById = asyncHandler(async (req, res) => {
+    const { userId } = req.params
+    
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new apierror("Invalid user ID", 400)
+    }
+    
+    const user = await User.findById(userId).select("-password -refreshtoken")
+    
+    if (!user) {
+        throw new apierror("User not found", 404)
+    }
+    
+    return res.status(200).json(
+        new apiresponse(200, user, "User fetched successfully")
+    )
+})
+
+export { register, loginuser,logoutuser,refreshAcessToken,changepassword ,getcurrentuser,updateuser, avatarupdate,coverimgupdate,getuserchannelprofile, watchistory, getUserById}

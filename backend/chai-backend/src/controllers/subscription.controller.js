@@ -22,10 +22,10 @@ const toggleSubscription = asyncHandler(async (req, res) => {
             subscriber: req.user._id,
             channel: channelId
         })
-        return res.status(200).json(new ApiResponse("Subscribed successfully",200,null))}
+        return res.status(200).json(new apiresponse(200, null, "Subscribed successfully"))}
         else{
             await subscription.findByIdAndDelete(subcriber._id)
-            return res.status(200).json(new ApiResponse("Unsubscribed successfully",200,null))
+            return res.status(200).json(new apiresponse(200, null, "Unsubscribed successfully"))
         }
 
 
@@ -40,7 +40,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     }
     const subscriber = await subscription.find({channel : channelId}).populate("subscriber","username avatar email fullname ")
     return res.status(200).json(
-        new ApiResponse("Subscriber list fetched successfully",200,subscriber)
+        new apiresponse(200, subscriber, "Subscriber list fetched successfully")
     )
 })
 
@@ -78,7 +78,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     
 //    ])
     return res.status(200).json(
-        new ApiResponse("Subscribed channels fetched successfully",200,channel)
+        new apiresponse(200, channel, "Subscribed channels fetched successfully")
     )
 })
 

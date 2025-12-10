@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import ReactPlayer from 'react-player'
 import { FiThumbsUp, FiThumbsDown, FiShare2 } from 'react-icons/fi'
 import { videoService } from '@/services/videoService'
@@ -10,9 +10,11 @@ import type { Video, Comment } from '@/types'
 import { useAuthStore } from '@/store/authStore'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
+import { userService } from '@/services/userService'
 
 export default function VideoDetail() {
   const { videoId } = useParams<{ videoId: string }>()
+  const navigate = useNavigate()
   const { user } = useAuthStore()
   const [video, setVideo] = useState<Video | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
@@ -64,6 +66,7 @@ export default function VideoDetail() {
       toast.error('Failed to like video')
     }
   }
+  
 
   const handleSubscribe = async () => {
     if (!user || !video) {
@@ -78,7 +81,12 @@ export default function VideoDetail() {
       toast.error('Failed to toggle subscription')
     }
   }
-
+  const handlechannel = () => {
+    if (video?.owner._id) {
+      navigate(`/channel/${video.owner._id}`)
+    }
+  }
+   
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) {
@@ -188,7 +196,12 @@ export default function VideoDetail() {
                     className="w-12 h-12 rounded-full"
                   />
                   <div>
-                    <h3 className="font-semibold">{video.owner.fullname}</h3>
+                    <h3 className="font-semibold">
+                      <div  
+                      onClick={handlechannel}>
+                        {video.owner.fullname}
+                      </div>
+                     </h3>
                     <p className="text-sm text-gray-400">{video.views} views</p>
                   </div>
                   <button

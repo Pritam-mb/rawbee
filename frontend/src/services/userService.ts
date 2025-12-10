@@ -6,7 +6,16 @@ export const userService = {
     const response = await api.get<ApiResponse<User>>(`/users/channel/${username}`)
     return response.data
   },
+  
+  async getUserById(userId: string) {
+    const response = await api.get<ApiResponse<User>>(`/users/user/${userId}`)
+    return response.data
+  },
 
+  async videos(userId: string) {
+    const response = await api.get<ApiResponse<{ count: number; videos: Video[] }>>(`/video/${userId}`)
+    return response.data
+  },
   async getWatchHistory() {
     const response = await api.get<ApiResponse<Video[]>>('/users/watch-history')
     return response.data

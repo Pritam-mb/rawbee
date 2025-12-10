@@ -11,7 +11,7 @@ const likeschema = new mongoose.Schema({
     },
     likedby:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "Users"
     },
      createdAt:{
         type: Date,

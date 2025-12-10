@@ -48,7 +48,7 @@ export default function VideoCard({ video }: VideoCardProps) {
               {video.title}
             </h3>
             <Link
-              to={`/channel/${video.owner.username}`}
+              to={`/channel/${video.owner._id}`}
               className="text-sm text-gray-400 hover:text-white block mt-1"
             >
               {video.owner.fullname}

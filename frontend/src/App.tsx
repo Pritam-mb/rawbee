@@ -6,7 +6,6 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VideoDetail from './pages/VideoDetail'
-import Channel from './pages/Channel'
 import MyChannel from './pages/MyChannel'
 import Upload from './pages/Upload'
 import Playlist from './pages/Playlist'
@@ -27,10 +26,10 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/video/:videoId" element={<VideoDetail />} />
-          <Route path="/channel/:username" element={<Channel />} />
           
           <Route element={<ProtectedRoute />}>
             <Route path="/my-channel" element={<MyChannel />} />
+            <Route path='/channel/:userId' element={<MyChannel />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/playlist/:playlistId" element={<Playlist />} />
             <Route path="/history" element={<WatchHistory />} />
