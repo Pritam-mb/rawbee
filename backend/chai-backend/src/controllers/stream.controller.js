@@ -98,6 +98,179 @@ const getStreamById = asyncHandler(async (req, res) => {
     .json(new apiresponse(200, stream, "Stream fetched successfully"));
 });
 
+// ==================== LIVE ROOM METHODS ====================
+
+// Create live room for screen-share-voice
+const createLiveRoom = asyncHandler(async (req, res) => {
+  const { title, description, streamType } = req.body;
+
+  if (!title?.trim()) {
+    throw new apierror("Room title is required", 400);
+  }
+
+  // Check if user already has an active live room
+  const existingRoom = await Stream.findOne({
+    host: req.user._id,
+    isLive: true,
+    streamType: "screen-share-voice",
+  });
+
+  if (existingRoom) {
+    throw new apierror("You already have an active live room. End it first.", 400);
+  }
+
+  const liveRoom = await Stream.create({
+    title: title.trim(),
+    description: description?.trim() || "",
+    host: req.user._id,
+    isLive: true,
+    streamType: streamType || "screen-share-voice",
+    participants: [],
+  });
+
+  const populatedRoom = await Stream.findById(liveRoom._id).populate(
+    "host",
+    "username fullname avatar"
+  );
+
+  return res
+    .status(201)
+    .json(new apiresponse(201, populatedRoom, "Live room created successfully"));
+});
+
+// Join live room (for WebRTC participants)
+const joinLiveRoom = asyncHandler(async (req, res) => {
+  const { streamId } = req.params;
+
+  const room = await Stream.findById(streamId);
+
+  if (!room) {
+    throw new apierror("Live room not found", 404);
+  }
+
+  if (!room.isLive) {
+    throw new apierror("Live room is not active", 400);
+  }
+
+  if (room.streamType !== "screen-share-voice") {
+    throw new apierror("This is not a live room", 400);
+  }
+
+  // Check max participants
+  if (room.participants.length >= (room["max-participants"] - 1)) {
+    throw new apierror("Live room is full", 400);
+  }
+
+  // Check if already in room
+  const alreadyJoined = room.participants.some(
+    (p) => p.user.toString() === req.user._id.toString()
+  );
+
+  if (alreadyJoined) {
+    throw new apierror("You are already in this room", 400);
+  }
+
+  // Add participant
+  room.participants.push({
+    user: req.user._id,
+    joinedAt: new Date(),
+    isMuted: false,
+  });
+  await room.save();
+
+  const populatedRoom = await Stream.findById(streamId)
+    .populate("host", "username fullname avatar")
+    .populate("participants.user", "username fullname avatar");
+
+  return res
+    .status(200)
+    .json(new apiresponse(200, populatedRoom, "Joined live room successfully"));
+});
+
+// Leave live room
+const leaveLiveRoom = asyncHandler(async (req, res) => {
+  const { streamId } = req.params;
+
+  const room = await Stream.findById(streamId);
+
+  if (!room) {
+    throw new apierror("Live room not found", 404);
+  }
+
+  // Remove participant
+  room.participants = room.participants.filter(
+    (p) => p.user.toString() !== req.user._id.toString()
+  );
+  await room.save();
+
+  return res
+    .status(200)
+    .json(new apiresponse(200, {}, "Left live room successfully"));
+});
+
+// Get live room details
+const getLiveRoomDetails = asyncHandler(async (req, res) => {
+  const { streamId } = req.params;
+
+  const room = await Stream.findById(streamId)
+    .populate("host", "username fullname avatar")
+    .populate("participants.user", "username fullname avatar");
+
+  if (!room) {
+    throw new apierror("Live room not found", 404);
+  }
+
+  return res
+    .status(200)
+    .json(new apiresponse(200, room, "Live room details fetched successfully"));
+});
+
+// End live room
+const endLiveRoom = asyncHandler(async (req, res) => {
+  const { streamId } = req.params;
+
+  const room = await Stream.findById(streamId);
+
+  if (!room) {
+    throw new apierror("Live room not found", 404);
+  }
+
+  if (room.host.toString() !== req.user._id.toString()) {
+    throw new apierror("You are not authorized to end this room", 403);
+  }
+
+  if (!room.isLive) {
+    throw new apierror("Live room is already ended", 400);
+  }
+
+  room.isLive = false;
+  room.endedAt = new Date();
+  room.roomstatus = "inactive";
+  await room.save();
+
+  return res
+    .status(200)
+    .json(new apiresponse(200, room, "Live room ended successfully"));
+});
+
+// Get all active live rooms
+const getActiveLiveRooms = asyncHandler(async (req, res) => {
+  const liveRooms = await Stream.find({
+    isLive: true,
+    streamType: "screen-share-voice",
+    roomtype: "public",
+  })
+    .populate("host", "username fullname avatar")
+    .populate("participants.user", "username fullname avatar")
+    .sort({ startedAt: -1 });
+
+  return res
+    .status(200)
+    .json(new apiresponse(200, liveRooms, "Active live rooms fetched successfully"));
+});
+
+// ==================== END LIVE ROOM METHODS ====================
+
 // Join stream (increment viewer count)
 const joinStream = asyncHandler(async (req, res) => {
   const { streamId } = req.params;
@@ -194,4 +367,11 @@ export {
   leaveStream,
   toggleChat,
   getStreamHistory,
+  // Live room exports
+  createLiveRoom,
+  joinLiveRoom,
+  leaveLiveRoom,
+  getLiveRoomDetails,
+  endLiveRoom,
+  getActiveLiveRooms,
 };

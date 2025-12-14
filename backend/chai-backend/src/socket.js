@@ -11,6 +11,9 @@ export const initializeSocket = (httpServer) => {
     },
   });
 
+  // Store room participants with their socket IDs
+  const rooms = new Map(); // streamId -> { host: socketId, participants: [{userId, socketId, username, avatar, isMuted}] }
+
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
@@ -104,6 +107,11 @@ export const initializeSocket = (httpServer) => {
       }
     });
 
+    socket.on("host-created room",async({streamId})=>{
+      socket.join(streamId);
+
+    });
+
     // Host mutes a participant
     socket.on("mute-participant", ({ streamId, userId, isMuted }) => {
       io.to(streamId).emit("participant-muted", { userId, isMuted });
@@ -131,9 +139,161 @@ export const initializeSocket = (httpServer) => {
       }
     });
 
+    // ==================== LIVE ROOM WEBRTC EVENTS ====================
+
+    // Host creates a live room
+    socket.on("host-create-room", async ({ streamId, userId, username, avatar }) => {
+      try {
+        socket.join(streamId);
+        
+        // Initialize room data
+        rooms.set(streamId, {
+          host: { socketId: socket.id, userId, username, avatar },
+          participants: []
+        });
+
+        console.log(`Host ${username} created live room ${streamId}`);
+        socket.emit("room-created", { streamId, success: true });
+      } catch (error) {
+        console.error("Error creating room:", error);
+        socket.emit("error", { message: "Failed to create room" });
+      }
+    });
+
+    // Participant joins live room
+    socket.on("participant-join-room", async ({ streamId, userId, username, avatar }) => {
+      try {
+        const room = rooms.get(streamId);
+        
+        if (!room) {
+          socket.emit("error", { message: "Room not found" });
+          return;
+        }
+
+        // Check max participants
+        if (room.participants.length >= 5) { // 1 host + 5 participants = 6 total
+          socket.emit("error", { message: "Room is full" });
+          return;
+        }
+
+        socket.join(streamId);
+
+        // Add participant to room
+        const participant = {
+          userId,
+          socketId: socket.id,
+          username,
+          avatar,
+          isMuted: false
+        };
+        room.participants.push(participant);
+
+        console.log(`Participant ${username} joined room ${streamId}`);
+
+        // Send room info to the new participant
+        socket.emit("room-joined", {
+          host: room.host,
+          participants: room.participants.filter(p => p.userId !== userId)
+        });
+
+        // Notify host and all other participants about new user
+        socket.to(streamId).emit("user-joined", {
+          userId,
+          username,
+          avatar,
+          socketId: socket.id
+        });
+      } catch (error) {
+        console.error("Error joining room:", error);
+        socket.emit("error", { message: "Failed to join room" });
+      }
+    });
+
+    // WebRTC Signaling - Offer
+    socket.on("webrtc-offer", ({ to, from, offer, streamId }) => {
+      console.log(`Forwarding offer from ${from} to ${to}`);
+      io.to(to).emit("webrtc-offer", { from, offer });
+    });
+
+    // WebRTC Signaling - Answer
+    socket.on("webrtc-answer", ({ to, from, answer, streamId }) => {
+      console.log(`Forwarding answer from ${from} to ${to}`);
+      io.to(to).emit("webrtc-answer", { from, answer });
+    });
+
+    // WebRTC Signaling - ICE Candidate
+    socket.on("ice-candidate", ({ to, candidate, streamId }) => {
+      io.to(to).emit("ice-candidate", { candidate });
+    });
+
+    // Participant leaves room
+    socket.on("leave-live-room", async ({ streamId, userId }) => {
+      try {
+        const room = rooms.get(streamId);
+        if (!room) return;
+
+        // Remove participant
+        room.participants = room.participants.filter(p => p.userId !== userId);
+
+        socket.leave(streamId);
+        console.log(`User ${userId} left room ${streamId}`);
+
+        // Notify everyone
+        io.to(streamId).emit("user-left", { userId });
+      } catch (error) {
+        console.error("Error leaving room:", error);
+      }
+    });
+
+    // Toggle mute/unmute
+    socket.on("toggle-mute", ({ streamId, userId, isMuted }) => {
+      const room = rooms.get(streamId);
+      if (room) {
+        const participant = room.participants.find(p => p.userId === userId);
+        if (participant) {
+          participant.isMuted = isMuted;
+        }
+      }
+      
+      io.to(streamId).emit("participant-muted", { userId, isMuted });
+      console.log(`User ${userId} is now ${isMuted ? 'muted' : 'unmuted'}`);
+    });
+
+    // Active speaker detection
+    socket.on("speaking", ({ streamId, userId, isSpeaking }) => {
+      socket.to(streamId).emit("user-speaking", { userId, isSpeaking });
+    });
+
+    // Host ends live room
+    socket.on("end-live-room", ({ streamId }) => {
+      console.log(`Host ending live room ${streamId}`);
+      io.to(streamId).emit("room-ended");
+      rooms.delete(streamId);
+    });
+
     // Handle disconnect
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
+
+      // Clean up rooms
+      rooms.forEach((room, streamId) => {
+        // Check if disconnected user was host
+        if (room.host.socketId === socket.id) {
+          io.to(streamId).emit("room-ended");
+          rooms.delete(streamId);
+          console.log(`Room ${streamId} closed because host disconnected`);
+          return;
+        }
+
+        // Check if disconnected user was participant
+        const participantIndex = room.participants.findIndex(p => p.socketId === socket.id);
+        if (participantIndex !== -1) {
+          const participant = room.participants[participantIndex];
+          room.participants.splice(participantIndex, 1);
+          io.to(streamId).emit("user-left", { userId: participant.userId });
+          console.log(`Participant ${participant.username} removed from room ${streamId}`);
+        }
+      });
     });
   });
 

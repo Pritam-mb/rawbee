@@ -16,6 +16,41 @@ const streamSchema = new Schema(
       ref: "Users",
       required: true,
     },
+    // Live room participants with WebRTC
+    participants: [{
+      user: {
+        type: Schema.Types.ObjectId,
+        ref: "Users",
+      },
+      joinedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      isMuted: {
+        type: Boolean,
+        default: false,
+      }
+    }],
+    roomtype: {
+      type: String,
+      enum: ["public", "private", "unlisted"],
+      default: "public",
+    },
+    "max-participants": {
+      type: Number,
+      default: 6
+    },
+    roomstatus:{
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active"
+    },
+    // Live room type: regular stream vs screen-share-voice
+    streamType: {
+      type: String,
+      enum: ["regular", "screen-share-voice"],
+      default: "regular",
+    },
     isLive: {
       type: Boolean,
       default: true,
