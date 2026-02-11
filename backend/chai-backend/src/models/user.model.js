@@ -49,6 +49,14 @@ const userSchema = new Schema({
     },
     refreshToken:{
         type: String
+    },
+    starttime:{
+        type: Date,
+        default: Date.now
+    },
+    endtime:{
+        type: Date,
+        default: Date.now
     }
 
 

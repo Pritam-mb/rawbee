@@ -27,7 +27,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/video/:videoId" element={<VideoDetail />} />
           
-          <Route element={<ProtectedRoute />}>
+            <Route element={<ProtectedRoute />}>
             <Route path="/my-channel" element={<MyChannel />} />
             <Route path='/channel/:userId' element={<MyChannel />} />
             <Route path="/upload" element={<Upload />} />
