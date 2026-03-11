@@ -12,6 +12,8 @@ import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 // import { userService } from '@/services/userService'
 
+const Player = ReactPlayer as any
+
 export default function VideoDetail() {
   const { videoId } = useParams<{ videoId: string }>()
   const navigate = useNavigate()
@@ -144,7 +146,7 @@ export default function VideoDetail() {
               </video>
             ) : (
               <div className="relative">
-                <ReactPlayer
+                {(ReactPlayer as any) && <Player
                   url={video.videoFile}
                   controls
                   playing={false}
@@ -161,12 +163,12 @@ export default function VideoDetail() {
                   }
                   style={{ aspectRatio: '16/9' }}
                   onReady={() => console.log('Video ready to play')}
-                  onError={(e) => {
+                  onError={(e: any) => {
                     console.error('ReactPlayer error:', e)
                     toast.error('Video player error, switching to native player')
                     setUseNativePlayer(true)
                   }}
-                />
+                />}
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => setUseNativePlayer(true)}

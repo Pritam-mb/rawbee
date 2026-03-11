@@ -16,7 +16,7 @@ export default function JoinLiveRoom() {
   const [isJoined, setIsJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
-  // const [hostStream, setHostStream] = useState<MediaStream | null>(null);
+  const [hostStream, setHostStream] = useState<MediaStream | null>(null);
   
   const hostVideoRef = useRef<HTMLVideoElement>(null);
   const user = useAuthStore((state) => state.user);
