@@ -16,15 +16,12 @@ function Startstream() {
   const startScreenShare = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          cursor: 'always',
-          displaySurface: 'monitor'
-        },
+        video: true,
         audio: {
           echoCancellation: true,
           noiseSuppression: true
         }
-      })
+      } as any)
       
       setStream(mediaStream)
       

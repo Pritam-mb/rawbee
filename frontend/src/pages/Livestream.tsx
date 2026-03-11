@@ -94,9 +94,9 @@ function Livestream() {
   const startScreenShare = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: 'always' },
+        video: true,
         audio: true
-      })
+      } as any)
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream

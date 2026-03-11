@@ -69,7 +69,7 @@ class WebRTCService {
       console.log(`Received ICE candidate`);
       // Find which peer this candidate is for (we'll improve this)
       // For now, add to all connections (not ideal, but works for small groups)
-      for (const [userId, peer] of this.peerConnections) {
+      for (const [_userId, peer] of this.peerConnections) {
         try {
           await peer.connection.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
@@ -251,7 +251,7 @@ class WebRTCService {
       );
 
       if (!peer) {
-        const peerConnection = await this.createPeerConnection(
+        await this.createPeerConnection(
           fromSocketId,
           "Host",
           fromSocketId

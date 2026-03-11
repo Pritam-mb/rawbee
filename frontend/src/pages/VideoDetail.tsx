@@ -10,7 +10,7 @@ import type { Video, Comment } from '@/types'
 import { useAuthStore } from '@/store/authStore'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
-import { userService } from '@/services/userService'
+// import { userService } from '@/services/userService'
 
 export default function VideoDetail() {
   const { videoId } = useParams<{ videoId: string }>()
@@ -150,13 +150,15 @@ export default function VideoDetail() {
                   playing={false}
                   width="100%"
                   height="100%"
-                  config={{
-                    file: {
-                      attributes: {
-                        controlsList: 'nodownload',
+                  config={
+                    {
+                      file: {
+                        attributes: {
+                          controlsList: 'nodownload',
+                        }
                       }
-                    }
-                  }}
+                    } as any
+                  }
                   style={{ aspectRatio: '16/9' }}
                   onReady={() => console.log('Video ready to play')}
                   onError={(e) => {

@@ -16,7 +16,7 @@ export default function JoinLiveRoom() {
   const [isJoined, setIsJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
-  const [hostStream, setHostStream] = useState<MediaStream | null>(null);
+  // const [hostStream, setHostStream] = useState<MediaStream | null>(null);
   
   const hostVideoRef = useRef<HTMLVideoElement>(null);
   const user = useAuthStore((state) => state.user);
@@ -101,7 +101,7 @@ export default function JoinLiveRoom() {
       });
 
       // 7. Listen for room joined confirmation
-      socket.on("room-joined", ({ host, participants: existingParticipants }) => {
+      socket.on("room-joined", ({ participants: existingParticipants }) => {
         console.log("Joined room successfully");
         setParticipants(existingParticipants);
         setIsJoined(true);

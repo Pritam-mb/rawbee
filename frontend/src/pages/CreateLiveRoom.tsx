@@ -81,7 +81,7 @@ export default function CreateLiveRoom() {
       webrtcService.init(socket, true);
 
       // 4. Setup callbacks for UI updates
-      webrtcService.onRemoteStream = (userId, remoteStream) => {
+      webrtcService.onRemoteStream = (userId, _remoteStream) => {
         console.log(`Received stream from participant ${userId}`);
         // You would add this to your participants list with audio element
       };
