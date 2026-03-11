@@ -32,7 +32,7 @@ services:
         value: 10d
       - key: CORS_ORIGIN
         sync: false
-    healthCheckPath: /api/v1/healthcheck
+    healthCheckPath: /healthcheck
 
 # Note: Static sites are not supported in render.yaml blueprints
 # Deploy frontend manually as a Static Site after backend is deployed
