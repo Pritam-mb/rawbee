@@ -34,17 +34,5 @@ services:
         sync: false
     healthCheckPath: /api/v1/healthcheck
 
-  # Frontend Service
-  - type: static
-    name: youtube-frontend
-    runtime: static
-    region: oregon
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/dist
-    envVars:
-      - key: VITE_API_URL
-        sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+# Note: Static sites are not supported in render.yaml blueprints
+# Deploy frontend manually as a Static Site after backend is deployed

@@ -54,29 +54,28 @@ git branch -M main
 git push -u origin main
 ```
 
+**Note:** Make sure to commit and push the updated `render.yaml` file!
+
 ## 🎯 Step 4: Deploy Backend on Render
 
-### Option A: Automatic Deployment (using render.yaml)
+### Using Blueprint (Recommended)
 
 1. Go to [render.com/dashboard](https://dashboard.render.com)
 2. Click **"New +"** → **"Blueprint"**
 3. Connect your GitHub repository
-4. Render will detect `render.yaml` and show 2 services
-5. Click **"Apply"**
-6. **IMPORTANT**: Before completing, set these environment variables:
-   
-   For **youtube-backend**:
+4. Render will detect `render.yaml` and show the backend service
+5. **IMPORTANT**: Set these environment variables before deploying:
    - `MONGO_URI`: Your MongoDB Atlas connection string
    - `CLOUDINARY_CLOUD_NAME`: From Cloudinary
    - `CLOUDINARY_API_KEY`: From Cloudinary
    - `CLOUDINARY_API_SECRET`: From Cloudinary
-   - `CORS_ORIGIN`: Will be your frontend URL (add after frontend deployment)
+   - `CORS_ORIGIN`: Leave empty for now (we'll add frontend URL later)
 
-7. Click **"Create Services"**
+6. Click **"Apply"** to create the backend service
+7. Wait for deployment (5-10 minutes first time)
+8. **Copy your backend URL** (e.g., `https://youtube-backend-xyz.onrender.com`)
 
-### Option B: Manual Deployment
-
-**Deploy Backend:**
+### Manual Deployment (Alternative)
 1. Go to Render Dashboard → **"New +"** → **"Web Service"**
 2. Connect your GitHub repository
 3. Configure:
@@ -112,9 +111,11 @@ git push -u origin main
 
 5. Click **"Create Web Service"**
 6. Wait for deployment (5-10 minutes first time)
-7. Copy your backend URL (e.g., `https://youtube-backend-xyz.onrender.com`)
+7. **Copy your backend URL** (e.g., `https://youtube-backend-xyz.onrender.com`)
 
-**Deploy Frontend:**
+## 🌐 Step 5: Deploy Frontend on Render
+
+**Deploy Frontend as Static Site:**
 1. Go to Render Dashboard → **"New +"** → **"Static Site"**
 2. Connect your GitHub repository
 3. Configure:
@@ -131,8 +132,9 @@ git push -u origin main
 
 5. Click **"Create Static Site"**
 6. Wait for deployment (3-5 minutes)
+7. **Copy your frontend URL** (e.g., `https://youtube-frontend-xyz.onrender.com`)
 
-## 🔄 Step 5: Update CORS_ORIGIN
+## 🔄 Step 6: Update CORS_ORIGIN
 
 1. Go to your **backend service** on Render
 2. Go to **Environment**
@@ -140,7 +142,7 @@ git push -u origin main
 4. Click **"Save Changes"**
 5. Backend will automatically redeploy
 
-## ✅ Step 6: Test Your Deployment
+## ✅ Step 7: Test Your Deployment
 
 1. Open your frontend URL in a browser
 2. Try to register/login
