@@ -1,0 +1,5 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://youtube-backend-xixp.onrender.com wss://youtube-backend-xixp.onrender.com https://res.cloudinary.com; media-src 'self' https://res.cloudinary.com blob:; frame-src 'self' https:; worker-src 'self' blob:;
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
