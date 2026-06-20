@@ -123,8 +123,14 @@ export default function WatchStream() {
 
         peer.ontrack = (event) => {
           if (videoRef.current) {
-            videoRef.current.srcObject = event.streams[0]
-            videoRef.current.muted = true // Ensure autoplay works! Viewers can unmute later if we add controls.
+            if (event.streams && event.streams[0]) {
+              videoRef.current.srcObject = event.streams[0]
+            } else {
+              const stream = new MediaStream()
+              stream.addTrack(event.track)
+              videoRef.current.srcObject = stream
+            }
+            videoRef.current.play().catch(console.error)
           }
         }
 
@@ -194,18 +200,18 @@ export default function WatchStream() {
             </div>
           ) : (
             <div className="w-full h-full bg-black relative flex items-center justify-center group">
+              {/* Fallback showing until video loads */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-0">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mb-4"></div>
+                <p className="text-gray-400">Waiting for video stream...</p>
+              </div>
               <video 
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-contain"
+                muted
+                className="w-full h-full object-contain relative z-10"
               />
-              
-              {/* Fallback showing until video loads */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center -z-10 bg-gray-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mb-4"></div>
-                <p className="text-gray-400">Connecting to stream...</p>
-              </div>
             </div>
           )}
           
