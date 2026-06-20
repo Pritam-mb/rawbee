@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { FiHome, FiTrendingUp, FiClock, FiThumbsUp, FiList, FiUsers } from 'react-icons/fi'
+import { FiHome, FiTrendingUp, FiClock, FiThumbsUp, FiList, FiUsers, FiRadio } from 'react-icons/fi'
 import { useAuthStore } from '@/store/authStore'
 
 export default function Sidebar() {
@@ -9,6 +9,7 @@ export default function Sidebar() {
   const menuItems = [
     { icon: FiHome, label: 'Home', path: '/' },
     { icon: FiTrendingUp, label: 'Trending', path: '/trending' },
+    { icon: FiRadio, label: 'Live Now', path: '/live' },
     { icon: FiUsers, label: 'Subscriptions', path: '/subscriptions', protected: true },
   ]
 

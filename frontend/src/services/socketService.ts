@@ -95,6 +95,47 @@ class SocketService {
     this.socket?.on('stream-ended', callback)
   }
 
+  // WebRTC methods
+  hostCreateRoom(streamId: string, userId: string, username: string, avatar: string) {
+    this.socket?.emit('host-create-room', { streamId, userId, username, avatar })
+  }
+
+  participantJoinRoom(streamId: string, userId: string, username: string, avatar: string) {
+    this.socket?.emit('participant-join-room', { streamId, userId, username, avatar })
+  }
+
+  sendWebRTCOffer(to: string, from: string, offer: any, streamId: string) {
+    this.socket?.emit('webrtc-offer', { to, from, offer, streamId })
+  }
+
+  sendWebRTCAnswer(to: string, from: string, answer: any, streamId: string) {
+    this.socket?.emit('webrtc-answer', { to, from, answer, streamId })
+  }
+
+  sendICECandidate(to: string, candidate: any, streamId: string) {
+    this.socket?.emit('ice-candidate', { to, candidate, streamId })
+  }
+
+  onUserJoined(callback: (data: any) => void) {
+    this.socket?.on('user-joined', callback)
+  }
+
+  onUserLeft(callback: (data: any) => void) {
+    this.socket?.on('user-left', callback)
+  }
+
+  onWebRTCOffer(callback: (data: any) => void) {
+    this.socket?.on('webrtc-offer', callback)
+  }
+
+  onWebRTCAnswer(callback: (data: any) => void) {
+    this.socket?.on('webrtc-answer', callback)
+  }
+
+  onICECandidate(callback: (data: any) => void) {
+    this.socket?.on('ice-candidate', callback)
+  }
+
   // Remove listeners
   off(event: string, callback?: any) {
     this.socket?.off(event, callback)

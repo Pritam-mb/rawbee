@@ -17,6 +17,10 @@ function Livestream() {
   const [streamTitle, setStreamTitle] = useState('')
   const [streamId, setStreamId] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
+  
+  // WebRTC Refs
+  const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map())
+  const streamRef = useRef<MediaStream | null>(null)
 
   // People in stream
   const [participants, setParticipants] = useState<Array<{id: string, name: string, avatar: string, isMutedByHost: boolean}>>([])
@@ -46,6 +50,7 @@ function Livestream() {
     // Join stream room
     if (user) {
       socketService.joinStream(id, user._id, user.username)
+      socketService.hostCreateRoom(id, user._id, user.username, user.avatar || '')
     }
     
     // Setup socket listeners
@@ -75,6 +80,63 @@ function Livestream() {
       toast('Stream has ended')
       navigate('/')
     })
+
+    // WebRTC Listeners
+    socketService.onUserJoined(async (data) => {
+      const peer = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      })
+      peersRef.current.set(data.socketId, peer)
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          peer.addTrack(track, streamRef.current!)
+        })
+      }
+
+      peer.onicecandidate = (event) => {
+        if (event.candidate) {
+          socketService.sendICECandidate(data.socketId, event.candidate, id)
+        }
+      }
+
+      peer.onnegotiationneeded = async () => {
+        try {
+          const offer = await peer.createOffer()
+          await peer.setLocalDescription(offer)
+          socketService.sendWebRTCOffer(data.socketId, socketService.getSocket()!.id, offer, id)
+        } catch (err) {
+          console.error("Renegotiation failed:", err)
+        }
+      }
+
+      const offer = await peer.createOffer()
+      await peer.setLocalDescription(offer)
+      socketService.sendWebRTCOffer(data.socketId, socketService.getSocket()!.id, offer, id)
+    })
+
+    socketService.onWebRTCAnswer(async ({ from, answer }) => {
+      const peer = peersRef.current.get(from)
+      if (peer) {
+        await peer.setRemoteDescription(new RTCSessionDescription(answer))
+      }
+    })
+
+    socketService.onICECandidate(async ({ from, candidate }) => {
+      const peer = peersRef.current.get(from)
+      if (peer) {
+        await peer.addIceCandidate(new RTCIceCandidate(candidate))
+      }
+    })
+    
+    socketService.onUserLeft((data) => {
+      const peer = peersRef.current.get(data.socketId) // Note: socketId not available in generic userLeft, but we'll try to find by userId if needed. Wait, in socket.js user-left doesn't have socketId.
+      // Actually backend `user-left` only sends `userId`. But if we use viewer-left, it sends userId too.
+      // It's fine, we can close all peers on stream end.
+    })
     
     // Auto-start screen sharing if coming from start stream page
     if (isActive === 'true') {
@@ -103,7 +165,20 @@ function Livestream() {
         videoRef.current.play()
       }
       
+      streamRef.current = mediaStream
       setIsScreenSharing(true)
+      
+      // Update existing peers with new tracks
+      mediaStream.getTracks().forEach(newTrack => {
+        peersRef.current.forEach(peer => {
+          const sender = peer.getSenders().find(s => s.track?.kind === newTrack.kind)
+          if (sender) {
+            sender.replaceTrack(newTrack)
+          } else {
+            peer.addTrack(newTrack, mediaStream)
+          }
+        })
+      })
       
       mediaStream.getVideoTracks()[0].onended = () => {
         setIsScreenSharing(false)

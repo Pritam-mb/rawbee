@@ -16,4 +16,8 @@ export const subscriptionService = {
     const response = await api.get<ApiResponse<any[]>>(`/subscriptions/subscribed-channels/${subscriberId}`)
     return response.data
   },
+  async channeldetails(channelId: string) {
+    const response = await api.get<ApiResponse<any[]>>(`/channel/${channelId}`)
+    return response.data
+  }
 }

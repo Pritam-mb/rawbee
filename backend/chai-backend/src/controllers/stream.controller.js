@@ -52,21 +52,22 @@ const endStream = asyncHandler(async (req, res) => {
     throw new apierror("Stream not found", 404);
   }
 
-  if (stream.host.toString() !== req.user._id.toString()) {
+  console.log("endStream -> stream.host:", stream.host);
+  console.log("endStream -> req.user._id:", req.user._id);
+  
+  // ensure we use .toString() safely
+  const hostId = stream.host?._id ? stream.host._id.toString() : stream.host?.toString();
+  const userId = req.user?._id?.toString();
+
+  if (hostId !== userId) {
     throw new apierror("You are not authorized to end this stream", 403);
   }
 
-  if (!stream.isLive) {
-    throw new apierror("Stream is already ended", 400);
-  }
-
-  stream.isLive = false;
-  stream.endedAt = new Date();
-  await stream.save();
+  await Stream.findByIdAndDelete(streamId);
 
   return res
     .status(200)
-    .json(new apiresponse(200, stream, "Stream ended successfully"));
+    .json(new apiresponse(200, null, "Stream ended and deleted successfully"));
 });
 
 // Get all live streams

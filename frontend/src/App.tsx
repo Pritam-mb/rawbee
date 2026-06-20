@@ -14,6 +14,8 @@ import LikedVideos from './pages/LikedVideos'
 import Subscriptions from './pages/Subscriptions'
 import Livestream from './pages/Livestream'
 import Startstream from './pages/Startstream'
+import LiveStreams from './pages/LiveStreams'
+import WatchStream from './pages/WatchStream'
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
             <Route path="/livestream" element={<Livestream />} />
             <Route path='/start-Livestream' element={<Startstream/>}></Route>
           </Route>
+          <Route path="/live" element={<LiveStreams />} />
+          <Route path="/stream/:streamId" element={<WatchStream />} />
         </Route>
       </Routes>
     </Router>

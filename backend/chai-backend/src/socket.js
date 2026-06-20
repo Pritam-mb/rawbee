@@ -223,7 +223,7 @@ export const initializeSocket = (httpServer) => {
 
     // WebRTC Signaling - ICE Candidate
     socket.on("ice-candidate", ({ to, candidate, streamId }) => {
-      io.to(to).emit("ice-candidate", { candidate });
+      io.to(to).emit("ice-candidate", { candidate, from: socket.id });
     });
 
     // Participant leaves room
