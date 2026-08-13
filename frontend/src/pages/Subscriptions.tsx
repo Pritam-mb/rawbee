@@ -39,19 +39,17 @@ export default function Subscriptions() {
           >
             <Link
               key={subscription.channel._id}
-              to={`/channel/${subscription.channel._id}`}>
-
+              to={`/channel/${subscription.channel._id}`}
+            >
               <img
                 src={subscription.channel.avatar}
                 alt={subscription.channel.username}
                 className="w-32 h-32 rounded-full mx-auto mb-4"
-
               />
             </Link>
 
             <h3 className="text-lg font-semibold text-center">{subscription.channel.fullname}</h3>
             <p className="text-sm text-gray-400 text-center mt-1">@{subscription.channel.username}</p>
-
           </Link>
         ))}
       </div>

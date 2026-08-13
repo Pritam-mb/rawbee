@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import VideoCard from '@/components/VideoCard'
 import { likeService } from '@/services/likeService'
+import { useAuthStore } from '@/store/authStore'
 import type { Video } from '@/types'
+import { FiThumbsUp } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 export default function LikedVideos() {

@@ -68,21 +68,25 @@ const register = asyncHandler(async (req, res) => {
     throw new apierror("User with this email or username already exists",409)
    }
    
-     const avatarlocal= req.files?.avatar[0]?.path //check if avatar exist
-    //  const coverlocal= req.files?.coverImage[0]?.path; //it actually get the file path which multer  returns the img url
+    const avatarlocal = req.files?.avatar?.[0]?.path //check if avatar exist
+    
     let coverlocal;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverlocal = req.files.coverImage[0].path
     }
-     if(!(avatarlocal)){
+    
+    if(!avatarlocal){
         throw new apierror("Avatar image is required",400)
     }
+    
     const avatarfile = await uploadCloudinary(avatarlocal) //upload cloudinary
-    const coverfile = await uploadCloudinary(coverlocal)
+    let coverfile = null;
+    if (coverlocal) {
+        coverfile = await uploadCloudinary(coverlocal)
+    }
 
     if(!avatarfile){
-            throw new apierror("Failed to upload avatar image",400)
-
+        throw new apierror("Failed to upload avatar image",400)
     }
    const user = await User.create({  //create a user 
         fullname,

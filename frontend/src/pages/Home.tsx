@@ -45,7 +45,11 @@ export default function Home() {
       <div className="video-grid">
         {loading
           ? Array.from({ length: 12 }).map((_, i) => <VideoSkeleton key={i} />)
-          : videos.map((video) => <VideoCard key={video._id} video={video} />)}
+          : (
+            <>
+              {videos.map((video) => <VideoCard key={video._id} video={video} />)}
+            </>
+          )}
       </div>
 
       {!loading && videos.length === 0 && (
