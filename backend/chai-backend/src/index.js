@@ -1,6 +1,6 @@
 // Load environment variables
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env" }); // .env is in the project root
+dotenv.config({ path: "./.env", override: true });
 console.log("🔧 Environment loaded. PORT:", process.env.PORT);
 console.log("🔧 MONGO_URI:", process.env.MONGO_URI ? "SET" : "NOT SET");
 // const a = require(FileSystem)

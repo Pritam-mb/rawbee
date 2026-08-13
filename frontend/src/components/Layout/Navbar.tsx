@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { FiSearch, FiVideo, FiBell, FiUser, FiLogOut, FiSettings } from 'react-icons/fi'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
@@ -11,14 +11,14 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/?search=${searchQuery}`)
     }
-  }
+  }, [navigate, searchQuery])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await authService.logout()
       logout()
@@ -27,7 +27,7 @@ export default function Navbar() {
     } catch (error) {
       toast.error('Failed to logout')
     }
-  }
+  }, [navigate, logout, authService])
 
   return (
     <nav className="sticky top-0 z-50 glass border-b border-gray-800/50 shadow-lg">
